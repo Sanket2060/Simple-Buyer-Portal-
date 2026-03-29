@@ -30,7 +30,6 @@ const generateAccessAndRefereshTokens = async (userId: number) => {
 };
 
 const registerUser = asyncHandler(async (req: Request, res: Response) => {
-
   const { fullName, email, password } = RegisterUserSchema.parse(req.body);
 
   const encryptedPassword = await encryptPassword(password);
@@ -49,7 +48,6 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
     .status(201)
     .json(new ApiResponse(200, user, "User registered Successfully"));
 });
-
 
 const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = LoginUserSchema.parse(req.body);
@@ -104,7 +102,6 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
     );
 });
 
-
 export const generateAccessToken = (user: any) => {
   return jwt.sign(
     {
@@ -115,11 +112,10 @@ export const generateAccessToken = (user: any) => {
     },
     process.env.ACCESS_TOKEN_SECRET as string,
     {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY as any,
     }
   );
 };
-
 
 export const generateRefreshToken = (userId: any) => {
   return jwt.sign(
@@ -128,7 +124,7 @@ export const generateRefreshToken = (userId: any) => {
     },
     process.env.REFRESH_TOKEN_SECRET as string,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY as any,
     }
   );
 };

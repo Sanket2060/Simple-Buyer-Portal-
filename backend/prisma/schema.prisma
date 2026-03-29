@@ -27,8 +27,12 @@ model User {
 
 model Property {
   id        Int      @id @default(autoincrement())
-  Title     String
-  Location  String
+  title     String
+  location  String
+  description String
+  imageUrl   String
+  price      Int
+
 
  favourites Favourite[]
 }
