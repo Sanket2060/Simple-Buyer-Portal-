@@ -1,0 +1,19 @@
+import type { Request, Response } from "express";
+import { ApiError } from "../utils/ApiError.ts";
+import { ApiResponse } from "../utils/ApiResponse.ts";
+import { asyncHandler } from "../utils/AsyncHandler.ts";
+import prisma from "../db/index.ts";
+
+const getFavouritePropertiesById = asyncHandler(
+  async (req: Request, res: Response): Promise<Response> => {
+    const { id } = req.params;
+    const property = await prisma.property.findUnique({
+      where: { id: Number(id) },
+    });
+    return res
+      .status(201)
+      .json(new ApiResponse(200, property, "Property fetched successfully"));
+  }
+);
+
+export { getFavouritePropertiesById };

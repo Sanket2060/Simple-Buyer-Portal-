@@ -1,4 +1,4 @@
-import { Request, NextFunction } from "express";
+import type { Request, NextFunction } from "express";
 import { ApiError } from "../utils/ApiError.ts";
 import { asyncHandler } from "../utils/AsyncHandler.ts";
 import jwt from "jsonwebtoken";

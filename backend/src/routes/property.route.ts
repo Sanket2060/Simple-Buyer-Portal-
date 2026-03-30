@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { getAllProperties, getPropertyById } from "../controllers/property.controller.ts";
+import {
+  getAllProperties,
+  getPropertyById,
+} from "../controllers/property.controller.ts";
 
 const router = Router();
 
