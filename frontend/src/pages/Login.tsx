@@ -15,6 +15,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [comingSoonToast, setComingSoonToast] = useState(false);
 
   const { mutate: login, isPending } = useLogin();
   const location = useLocation();
@@ -50,6 +51,11 @@ const Login = () => {
     );
   };
 
+  const handleForgotPassword = () => {
+    setComingSoonToast(true);
+    setTimeout(() => setComingSoonToast(false), 2200);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -58,6 +64,12 @@ const Login = () => {
           <h1 className="text-white text-2xl font-semibold">BuyerPortal</h1>
           <p className="text-zinc-500 text-sm mt-1">Sign in to your account</p>
         </div>
+
+        {comingSoonToast && (
+          <div className="flex items-center gap-2 text-zinc-200 text-sm bg-zinc-900 border border-zinc-700 px-3 py-2.5 rounded-lg mb-4">
+            <span>Feature coming soon.</span>
+          </div>
+        )}
 
         {/* Registration success banner */}
         {justRegistered && (
@@ -111,6 +123,7 @@ const Login = () => {
               </label>
               <button
                 type="button"
+                onClick={handleForgotPassword}
                 className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
               >
                 Forgot password?
