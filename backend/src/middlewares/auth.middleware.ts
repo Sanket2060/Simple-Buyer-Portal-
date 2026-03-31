@@ -40,9 +40,11 @@ export const verifyJWT = asyncHandler(
       req.user = user;
       next();
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Invalid access token";
-      throw new ApiError(401, message);
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new ApiError(401, "Token expired");
+      }
+
+      throw new ApiError(401, "Invalid access token");
     }
   }
 );

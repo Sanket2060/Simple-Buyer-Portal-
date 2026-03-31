@@ -96,6 +96,11 @@ const loginUser = asyncHandler(
       user.id
     );
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken },
+    });
+
     const loggedInUser = await prisma.user.findUnique({
       where: { id: user.id },
       select: {
@@ -124,4 +129,67 @@ const loginUser = asyncHandler(
   }
 );
 
-export { registerUser, loginUser };
+const refreshAccessToken = asyncHandler(
+  async (req: Request, res: Response): Promise<Response> => {
+    const incomingRefreshToken =
+      req.cookies?.refreshToken || req.body?.refreshToken;
+
+    if (!incomingRefreshToken) {
+      throw new ApiError(401, "Session expired. Please log in again.");
+    }
+
+    if (!process.env.REFRESH_TOKEN_SECRET) {
+      throw new ApiError(500, "Internal Server Error");
+    }
+
+    let decodedToken: { id: number };
+    try {
+      decodedToken = jwt.verify(
+        incomingRefreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      ) as { id: number };
+    } catch {
+      throw new ApiError(401, "Session expired. Please log in again.");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: Number(decodedToken.id) },
+    });
+
+    if (
+      !user ||
+      !user.refreshToken ||
+      user.refreshToken !== incomingRefreshToken
+    ) {
+      throw new ApiError(401, "Session expired. Please log in again.");
+    }
+
+    const { accessToken, refreshToken } = generateAccessAndRefreshTokens(
+      user.id
+    );
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken },
+    });
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    };
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .cookie("refreshToken", refreshToken, cookieOptions)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken },
+          "Session refreshed successfully"
+        )
+      );
+  }
+);
+
+export { registerUser, loginUser, refreshAccessToken };
