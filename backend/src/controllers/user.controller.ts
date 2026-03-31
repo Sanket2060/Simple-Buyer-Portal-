@@ -10,67 +10,89 @@ import {
 import prisma from "../db/index.ts";
 import bcrypt from "bcrypt";
 
-const generateAccessAndRefereshTokens = async (userId: number) => {
+// ─── Token helpers ────────────────────────────────────────────────────────────
+
+export const generateAccessToken = (userId: number) => {
+  return jwt.sign({ id: userId }, process.env.ACCESS_TOKEN_SECRET as string, {
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY as any,
+  });
+};
+
+export const generateRefreshToken = (userId: number) => {
+  return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET as string, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRY as any,
+  });
+};
+
+const generateAccessAndRefreshTokens = (userId: number) => {
   try {
-    // By ID
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    const accessToken = generateAccessToken({ _id: userId });
+    const accessToken = generateAccessToken(userId);
     const refreshToken = generateRefreshToken(userId);
-
     return { accessToken, refreshToken };
-  } catch (error) {
-    throw new ApiError(
-      500,
-      "Something went wrong while generating referesh and access token"
-    );
+  } catch {
+    throw new ApiError(500, "Something went wrong while generating tokens");
   }
 };
+
+// ─── Password helpers ─────────────────────────────────────────────────────────
+
+const encryptPassword = (password: string) => bcrypt.hash(password, 10);
+
+const isPasswordCorrect = (password: string, hash: string) =>
+  bcrypt.compare(password, hash);
+
+// ─── Controllers ──────────────────────────────────────────────────────────────
 
 const registerUser = asyncHandler(
   async (req: Request, res: Response): Promise<Response> => {
     const { fullName, email, password } = RegisterUserSchema.parse(req.body);
 
+    // Duplicate email check
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ApiError(409, "An account with this email already exists");
+    }
+
     const encryptedPassword = await encryptPassword(password);
 
     const user = await prisma.user.create({
       data: {
-        email: email,
-        fullName: fullName,
+        email,
+        fullName,
         role: "buyer",
         password: encryptedPassword,
       },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        createdAt: true,
+        refreshToken: true,
+      },
     });
-    console.log(user);
 
     return res
       .status(201)
-      .json(new ApiResponse(200, user, "User registered Successfully"));
+      .json(new ApiResponse(201, user, "User registered successfully"));
   }
 );
 
 const loginUser = asyncHandler(
   async (req: Request, res: Response): Promise<Response> => {
     const { email, password } = LoginUserSchema.parse(req.body);
-    console.log(email);
 
-    const user = await prisma.user.findUnique({
-      where: { email: email },
-    });
-
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new ApiError(404, "User not found");
+      throw new ApiError(404, "No user found with this email");
     }
 
     const isPasswordValid = await isPasswordCorrect(password, user.password);
-
     if (!isPasswordValid) {
-      throw new ApiError(401, "Invalid user credentials");
+      throw new ApiError(401, "Incorrect password");
     }
 
-    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+    const { accessToken, refreshToken } = generateAccessAndRefreshTokens(
       user.id
     );
 
@@ -83,66 +105,23 @@ const loginUser = asyncHandler(
       },
     });
 
-    const options = {
+    const cookieOptions = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
     };
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .cookie("refreshToken", refreshToken, cookieOptions)
       .json(
         new ApiResponse(
           200,
-          {
-            user: loggedInUser,
-            accessToken,
-            refreshToken,
-          },
-          "User logged In Successfully"
+          { user: loggedInUser, accessToken, refreshToken },
+          "Logged in successfully"
         )
       );
   }
 );
 
-export const generateAccessToken = (user: any) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      fullName: user.fullName,
-    },
-    process.env.ACCESS_TOKEN_SECRET as string,
-    {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY as any,
-    }
-  );
-};
-
-export const generateRefreshToken = (userId: any) => {
-  return jwt.sign(
-    {
-      id: userId,
-    },
-    process.env.REFRESH_TOKEN_SECRET as string,
-    {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY as any,
-    }
-  );
-};
-
-const encryptPassword = async (password: string) => {
-  const encryptedPassword = await bcrypt.hash(password, 10);
-  return encryptedPassword;
-};
-
-const isPasswordCorrect = async (
-  password: string,
-  encryptedPassword: string
-) => {
-  return await bcrypt.compare(password, encryptedPassword);
-};
-
-export { loginUser, registerUser };
+export { registerUser, loginUser };

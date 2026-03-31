@@ -27,8 +27,12 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: (payload: RegisterPayload) => registerUser(payload),
     onSuccess: () => {
-      // After successful registration redirect to login
-      navigate("/", { replace: true });
+      // Pass a success flag via router state so the login page can
+      // display a confirmation message without any shared global state.
+      navigate("/", {
+        replace: true,
+        state: { registered: true },
+      });
     },
   });
 };
