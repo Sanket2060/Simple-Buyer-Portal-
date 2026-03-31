@@ -1,35 +1,6 @@
 import { Link } from "react-router";
 import Navbar from "../components/Navbar";
-
-const MOCK_FAVOURITES = [
-  {
-    id: 1,
-    title: "Luxury Penthouse",
-    location: "Downtown Manhattan, New York",
-    price: 2_850_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80",
-    type: "Penthouse",
-  },
-  {
-    id: 3,
-    title: "Modern Beach Villa",
-    location: "Malibu, California",
-    price: 4_200_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&q=80",
-    type: "Villa",
-  },
-  {
-    id: 6,
-    title: "Mountain Retreat Cabin",
-    location: "Aspen, Colorado",
-    price: 3_100_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&q=80",
-    type: "Cabin",
-  },
-];
+import { useFavourites } from "../hooks/useFavourites";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("en-US", {
@@ -38,8 +9,18 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price);
 
+const SkeletonCard = () => (
+  <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden animate-pulse">
+    <div className="h-48 bg-zinc-800" />
+    <div className="p-4 space-y-2">
+      <div className="h-4 bg-zinc-800 rounded w-3/4" />
+      <div className="h-3 bg-zinc-800 rounded w-1/2" />
+    </div>
+  </div>
+);
+
 const Favourites = () => {
-  const favourites = MOCK_FAVOURITES;
+  const { data: favourites, isLoading, isError, error } = useFavourites();
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -50,13 +31,41 @@ const Favourites = () => {
         <div className="mb-10">
           <h1 className="text-white text-2xl font-semibold">Favourites</h1>
           <p className="text-zinc-500 text-sm mt-1">
-            {favourites.length} saved{" "}
-            {favourites.length === 1 ? "property" : "properties"}
+            {isLoading
+              ? "Loading…"
+              : `${favourites?.length ?? 0} saved ${(favourites?.length ?? 0) === 1 ? "property" : "properties"}`}
           </p>
         </div>
 
+        {/* Error */}
+        {isError && (
+          <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950 border border-red-900 px-4 py-3 rounded-lg mb-6">
+            <svg
+              className="w-4 h-4 shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>{error?.message ?? "Failed to load favourites."}</span>
+          </div>
+        )}
+
+        {/* Skeleton */}
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        )}
+
         {/* Empty state */}
-        {favourites.length === 0 ? (
+        {!isLoading && !isError && (favourites?.length ?? 0) === 0 && (
           <div className="py-24 text-center">
             <p className="text-zinc-600 text-sm mb-4">
               You haven't saved any properties yet.
@@ -68,10 +77,13 @@ const Favourites = () => {
               Browse properties
             </Link>
           </div>
-        ) : (
+        )}
+
+        {/* Grid */}
+        {!isLoading && !isError && (favourites?.length ?? 0) > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {favourites.map((property) => (
+              {favourites!.map(({ property }) => (
                 <Link
                   to={`/property/${property.id}`}
                   key={property.id}

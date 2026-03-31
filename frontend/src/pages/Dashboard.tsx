@@ -1,57 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import Navbar from "../components/Navbar";
-
-const MOCK_PROPERTIES = [
-  {
-    id: 1,
-    title: "Luxury Penthouse",
-    location: "Downtown Manhattan, New York",
-    price: 2_850_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80",
-  },
-  {
-    id: 2,
-    title: "Cozy Suburban Home",
-    location: "Naperville, Illinois",
-    price: 485_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80",
-  },
-  {
-    id: 3,
-    title: "Modern Beach Villa",
-    location: "Malibu, California",
-    price: 4_200_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&q=80",
-  },
-  {
-    id: 4,
-    title: "Urban Studio Loft",
-    location: "SoHo, San Francisco",
-    price: 720_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-  },
-  {
-    id: 5,
-    title: "Classic Colonial House",
-    location: "Greenwich, Connecticut",
-    price: 1_350_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-  },
-  {
-    id: 6,
-    title: "Mountain Retreat Cabin",
-    location: "Aspen, Colorado",
-    price: 3_100_000,
-    imageUrl:
-      "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&q=80",
-  },
-];
+import { useProperties } from "../hooks/useProperties";
+import { useAuth } from "../context/AuthContext";
+import { useFavouriteIds } from "../hooks/useFavourites";
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("en-US", {
@@ -60,10 +12,23 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price);
 
+const SkeletonCard = () => (
+  <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden animate-pulse">
+    <div className="h-48 bg-zinc-800" />
+    <div className="p-4 space-y-2">
+      <div className="h-4 bg-zinc-800 rounded w-3/4" />
+      <div className="h-3 bg-zinc-800 rounded w-1/2" />
+    </div>
+  </div>
+);
+
 const Dashboard = () => {
   const [search, setSearch] = useState("");
+  const { user } = useAuth();
+  const { data: properties, isLoading, isError, error } = useProperties();
+  const favouriteIds = useFavouriteIds();
 
-  const filtered = MOCK_PROPERTIES.filter(
+  const filtered = (properties ?? []).filter(
     (p) =>
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       p.location.toLowerCase().includes(search.toLowerCase()),
@@ -77,7 +42,7 @@ const Dashboard = () => {
         {/* Welcome */}
         <div className="mb-10">
           <h1 className="text-white text-2xl font-semibold">
-            Welcome back, John
+            Welcome back, {user?.fullName ?? "—"}
           </h1>
           <p className="text-zinc-500 text-sm mt-1">
             Buyer &middot; Browse available properties below.
@@ -87,8 +52,9 @@ const Dashboard = () => {
         {/* Search + count row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <p className="text-zinc-500 text-sm">
-            {filtered.length}{" "}
-            {filtered.length === 1 ? "property" : "properties"}
+            {isLoading
+              ? "Loading…"
+              : `${filtered.length} ${filtered.length === 1 ? "property" : "properties"}`}
           </p>
           <input
             type="text"
@@ -99,14 +65,44 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Grid */}
-        {filtered.length === 0 ? (
+        {/* Error */}
+        {isError && (
+          <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950 border border-red-900 px-4 py-3 rounded-lg mb-6">
+            <svg
+              className="w-4 h-4 shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>{error?.message ?? "Failed to load properties."}</span>
+          </div>
+        )}
+
+        {/* Skeleton */}
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty search result */}
+        {!isLoading && !isError && filtered.length === 0 && (
           <div className="py-24 text-center">
             <p className="text-zinc-600 text-sm">
               No properties match your search.
             </p>
           </div>
-        ) : (
+        )}
+
+        {/* Grid */}
+        {!isLoading && !isError && filtered.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((property) => (
               <Link
@@ -121,6 +117,18 @@ const Dashboard = () => {
                     alt={property.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
+                  {/* Saved heart indicator */}
+                  {favouriteIds.has(property.id) && (
+                    <div className="absolute top-3 right-3 w-7 h-7 bg-zinc-900/80 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-3.5 h-3.5 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                      </svg>
+                    </div>
+                  )}
                   <div className="absolute bottom-0 inset-x-0 h-16 bg-linear-to-t from-black/60 to-transparent" />
                 </div>
 

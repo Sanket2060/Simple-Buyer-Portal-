@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response } from "express";
-import { ApiError } from "../utils/ApiError.js";
+import type { NextFunction, Request, Response } from "express";
+import { ApiError } from "../utils/ApiError.ts";
 import { asyncHandler } from "../utils/AsyncHandler.ts";
 import jwt from "jsonwebtoken";
 import prisma from "../db/index.ts";

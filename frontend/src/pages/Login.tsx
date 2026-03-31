@@ -1,8 +1,51 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { z } from "zod";
+import { useLogin } from "../hooks/useAuthMutations";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address."),
+  password: z.string().min(1, "Password is required."),
+});
+
+type FormErrors = Partial<Record<"email" | "password" | "root", string>>;
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const { mutate: login, isPending } = useLogin();
+
+  const validate = (): boolean => {
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      const fieldErrors: FormErrors = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof FormErrors;
+        fieldErrors[field] = issue.message;
+      }
+      setErrors(fieldErrors);
+      return false;
+    }
+    setErrors({});
+    return true;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    login(
+      { email, password },
+      {
+        onError: (err) => {
+          setErrors({ root: err.message });
+        },
+      },
+    );
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
@@ -13,8 +56,7 @@ const Login = () => {
           <p className="text-zinc-500 text-sm mt-1">Sign in to your account</p>
         </div>
 
-        {/* Form */}
-        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           {/* Email */}
           <div>
             <label
@@ -26,9 +68,18 @@ const Login = () => {
             <input
               id="email"
               type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full px-3 py-2.5 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+              disabled={isPending}
+              className={`w-full px-3 py-2.5 text-sm bg-zinc-900 border rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors disabled:opacity-50 ${
+                errors.email ? "border-red-800" : "border-zinc-800"
+              }`}
             />
+            {errors.email && (
+              <p className="text-red-400 text-xs mt-1.5">{errors.email}</p>
+            )}
           </div>
 
           {/* Password */}
@@ -48,13 +99,20 @@ const Login = () => {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2.5 pr-10 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+                disabled={isPending}
+                className={`w-full px-3 py-2.5 pr-10 text-sm bg-zinc-900 border rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors disabled:opacity-50 ${
+                  errors.password ? "border-red-800" : "border-zinc-800"
+                }`}
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((s) => !s)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-600 hover:text-zinc-400 transition-colors"
+                tabIndex={-1}
               >
                 {showPassword ? (
                   <svg
@@ -92,30 +150,57 @@ const Login = () => {
                 )}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-red-400 text-xs mt-1.5">{errors.password}</p>
+            )}
           </div>
 
-          {/* Error slot — hidden by default */}
-          <div className="hidden items-center gap-2 text-red-400 text-sm bg-red-950 border border-red-900 px-3 py-2.5 rounded-lg">
-            <svg
-              className="w-4 h-4 shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>Invalid email or password.</span>
-          </div>
+          {/* Root / server error */}
+          {errors.root && (
+            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950 border border-red-900 px-3 py-2.5 rounded-lg">
+              <svg
+                className="w-4 h-4 shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>{errors.root}</span>
+            </div>
+          )}
 
           {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-medium text-sm py-2.5 rounded-lg transition-colors mt-2"
+            disabled={isPending}
+            className="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-medium text-sm py-2.5 rounded-lg transition-colors mt-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Sign in
+            {isPending && (
+              <svg
+                className="w-4 h-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+            )}
+            {isPending ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
