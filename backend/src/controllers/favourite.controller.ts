@@ -6,12 +6,13 @@ import prisma from "../db/index.ts";
 
 const getFavouritePropertiesById = asyncHandler(
   async (req: Request, res: Response): Promise<Response> => {
-    const { id } = req.params;
-    if (!id) {
-      throw new ApiError(400, "User ID is required");
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
     }
+
     const property = await prisma.favourite.findMany({
-      where: { userId: Number(id) },
+      where: { userId: Number(userId) },
       include: {
         property: true,
       },
@@ -28,8 +29,8 @@ const removeFavouriteProperty = asyncHandler(
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
     }
-    const { propertyId } = req.params;
-    if (!propertyId) {
+    const { id } = req.params;
+    if (!id) {
       throw new ApiError(400, "No property ID provided");
     }
 
@@ -37,7 +38,7 @@ const removeFavouriteProperty = asyncHandler(
       where: {
         userId_propertyId: {
           userId: Number(userId),
-          propertyId: Number(propertyId),
+          propertyId: Number(id),
         },
       },
     });
