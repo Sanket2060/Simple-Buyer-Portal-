@@ -1,6 +1,5 @@
 # Buyer Portal
 
-Take-home assessment submission for Junior Full-Stack Engineer.
 
 ## Assessment Context
 
@@ -192,6 +191,17 @@ Detailed API examples are available in backend/API_DOCUMENTATION.md
   "success": false
 }
 ```
+
+## Deployment
+It's live on https://buyer-portal-beta.vercel.app/ 
+Frontend : Vercel
+Backend  : Digital Ocean
+
+Test credentials for the live:
+email: sanketkarki2060@gmail.com
+Password: 123456karki
+Or,
+You can simply signup.
 
 ## Notes
 
