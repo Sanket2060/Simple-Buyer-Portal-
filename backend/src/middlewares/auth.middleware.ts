@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
-import { ApiError } from "../utils/ApiError.ts";
-import { asyncHandler } from "../utils/AsyncHandler.ts";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt from "jsonwebtoken";
-import prisma from "../db/index.ts";
+import prisma from "../db/index.js";
 
 export const verifyJWT = asyncHandler(
   async (req: Request, _: Response, next: NextFunction) => {
@@ -48,3 +48,4 @@ export const verifyJWT = asyncHandler(
     }
   }
 );
+

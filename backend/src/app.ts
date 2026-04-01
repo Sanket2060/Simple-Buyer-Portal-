@@ -2,10 +2,10 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import type { NextFunction, Request, Response } from "express";
-import { userRouter } from "./routes/user.route.ts";
-import { propertyRouter } from "./routes/property.route.ts";
-import { favouriteRouter } from "./routes/favourite.route.ts";
-import { ApiError } from "./utils/ApiError.ts";
+import { userRouter } from "./routes/user.route.js";
+import { propertyRouter } from "./routes/property.route.js";
+import { favouriteRouter } from "./routes/favourite.route.js";
+import { ApiError } from "./utils/ApiError.js";
 
 const app = express();
 
@@ -55,3 +55,4 @@ app.use((err: unknown, _: Request, res: Response, __: NextFunction) => {
 });
 
 export { app };
+

@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
-import { ApiError } from "../utils/ApiError.ts";
-import { ApiResponse } from "../utils/ApiResponse.ts";
-import { asyncHandler } from "../utils/AsyncHandler.ts";
-import prisma from "../db/index.ts";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/AsyncHandler.js";
+import prisma from "../db/index.js";
 
 const getAllProperties = asyncHandler(
   async (_: Request, res: Response): Promise<Response> => {
@@ -32,3 +32,4 @@ const getPropertyById = asyncHandler(
 );
 
 export { getAllProperties, getPropertyById };
+

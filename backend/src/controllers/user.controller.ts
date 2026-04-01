@@ -1,13 +1,13 @@
 import type { Request, Response } from "express";
-import { ApiError } from "../utils/ApiError.ts";
-import { asyncHandler } from "../utils/AsyncHandler.ts";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/AsyncHandler.js";
 import jwt from "jsonwebtoken";
-import { ApiResponse } from "../utils/ApiResponse.ts";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import {
   RegisterUserSchema,
   LoginUserSchema,
-} from "../validators/auth.validator.ts";
-import prisma from "../db/index.ts";
+} from "../validators/auth.validator.js";
+import prisma from "../db/index.js";
 import bcrypt from "bcrypt";
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
@@ -193,3 +193,4 @@ const refreshAccessToken = asyncHandler(
 );
 
 export { registerUser, loginUser, refreshAccessToken };
+

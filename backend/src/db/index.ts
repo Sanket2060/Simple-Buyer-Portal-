@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../generated/prisma/client.ts";
+import { PrismaClient } from "../../generated/prisma/client.js";
 
 import process from "process";
 
@@ -24,3 +24,4 @@ const connectDB = async () => {
 
 export { connectDB };
 export default prisma;
+

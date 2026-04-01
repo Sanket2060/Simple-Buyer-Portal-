@@ -1,7 +1,7 @@
 // require('dotenv').config({path: './env'})
 import dotenv from "dotenv";
-import { app } from "./app.ts";
-import { connectDB } from "./db/index.ts";
+import { app } from "./app.js";
+import { connectDB } from "./db/index.js";
 dotenv.config({
   path: "./.env",
 });
@@ -15,3 +15,4 @@ connectDB()
   .catch((err: Error) => {
     console.log("Postgres Database connection failed !!! ", err);
   });
+
