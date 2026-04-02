@@ -47,6 +47,8 @@ app.use((err: unknown, _: Request, res: Response, __: NextFunction) => {
     });
   }
 
+  console.error("Unhandled backend error:", err);
+
   return res.status(500).json({
     statusCode: 500,
     message: "Internal Server Error",
@@ -55,4 +57,3 @@ app.use((err: unknown, _: Request, res: Response, __: NextFunction) => {
 });
 
 export { app };
-
