@@ -2,13 +2,13 @@ import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma/client.js";
 
-import process from "process";
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not configured");
+}
 
-// 1. Setup the connection pool (Required for the adapter)
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 
-// 2. Initialize the client immediately
 const prisma = new PrismaClient({ adapter });
 
 const connectDB = async () => {
@@ -24,4 +24,3 @@ const connectDB = async () => {
 
 export { connectDB };
 export default prisma;
-
